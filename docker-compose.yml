@@ -58,9 +58,54 @@ services:
             retries: 30
         expose:
           - 6379
+    loki:
+      image: grafana/loki:latest
+      ports:
+        - "3100:3100"
+      volumes:
+        - loki_data:/loki
+      networks:
+        - app
+    prometheus:
+      image: prom/prometheus:latest
+      ports:
+        - "9090:9090"
+      volumes:
+        - .docker/config/prometheus.yml:/etc/prometheus/prometheus.yml
+        - prometheus_data:/prometheus
+      command:
+        - '--config.file=/etc/prometheus/prometheus.yml'
+      depends_on:
+        - php
+        - loki
+    promtail:
+      image: grafana/promtail:v1.3.0
+      volumes:
+        - promtail_data:/var/www/html/storage/logs
+      command: -config.file=/etc/promtail/docker-config.yaml
+      networks:
+        - app
+    grafana:
+      image: grafana/grafana:latest
+      container_name: grafana
+      volumes:
+        - ./:/var/www/html
+        - ./.docker/config/grafana.ini:/etc/grafana/grafana.ini
+        - grafana_data:/var/lib/grafana
+      ports:
+        - "3000:3000"
+      depends_on:
+        - db
+        - prometheus
+      networks:
+        - app
 volumes:
     pg_data:
     redis_data:
+    loki_data:
+    prometheus_data:
+    promtail_data:
+    grafana_data:
 networks:
     app:
         driver: bridge
