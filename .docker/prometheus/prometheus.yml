@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'laravel_app'
+    static_configs:
+      - targets: ['localhost:80']
+  - job_name: 'loki'
+    static_configs:
+      - targets: ['loki:3100']
