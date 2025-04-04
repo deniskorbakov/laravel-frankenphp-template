@@ -58,48 +58,49 @@ services:
             retries: 30
         expose:
           - 6379
+    prometheus:
+      image: prom/prometheus
+      container_name: prometheus.${APP_NAMESPACE}
+      ports:
+        - "9090:9090"
+      volumes:
+        - .docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      networks:
+        - app
+
+    grafana:
+      image: grafana/grafana
+      container_name: grafana
+      ports:
+        - "3000:3000"
+      volumes:
+        - grafana_data:/var/lib/grafana
+      networks:
+        - app
+
     loki:
       image: grafana/loki:latest
       container_name: loki.${APP_NAMESPACE}
       ports:
         - "3100:3100"
       volumes:
-        - loki_data:/loki
+        - .docker/grafana/loki-config.yml:/etc/loki/local-config.yaml
       networks:
         - app
-    prometheus:
-      image: prom/prometheus:latest
-      container_name: prometheus.${APP_NAMESPACE}
-      ports:
-        - "9090:9090"
-      volumes:
-        - .docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-        - prometheus_data:/prometheus
-      command:
-        - '--config.file=/etc/prometheus/prometheus.yml'
-      depends_on:
-        - php
-        - loki
     promtail:
-      image: grafana/promtail:v1.3.0
+      image: grafana/promtail:latest
       container_name: promtail.${APP_NAMESPACE}
       volumes:
-        - promtail_data:/var/www/html/storage/logs
-      command: -config.file=/etc/promtail/docker-config.yaml
+        - ./:/var/log
+        - .docker/grafana/promtail-config.yml:/etc/promtail/config.yml
       networks:
         - app
-    grafana:
-      image: grafana/grafana:latest
-      container_name: grafana.${APP_NAMESPACE}
-      volumes:
-        - ./:/var/www/html
-        - .docker/grafana/grafana.ini:/etc/grafana/grafana.ini
-        - grafana_data:/var/lib/grafana
+      command: -config.file=/etc/promtail/config.yml
+    node-exporter:
+      image: prom/node-exporter
+      container_name: node-exporter.${APP_NAMESPACE}
       ports:
-        - "3000:3000"
-      depends_on:
-        - db
-        - prometheus
+        - "9100:9100"
       networks:
         - app
 volumes:

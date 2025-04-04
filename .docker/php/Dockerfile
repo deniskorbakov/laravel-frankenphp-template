@@ -16,7 +16,8 @@ RUN install-php-extensions \
     pdo_pgsql \
     pgsql \
     redis \
-    zip
+    zip \
+    apcu
 
 WORKDIR /app
 
